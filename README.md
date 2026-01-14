@@ -34,8 +34,8 @@ By applying advanced learnings from industry internships, this project leverages
 
 1.  **Clone the repository**
     ```bash
-    git clone [https://github.com/yourusername/school-announcements.git](https://github.com/yourusername/school-announcements.git)
-    cd school-announcements
+    git clone [https://github.com/llegaspo/WhatsUP.git](https://github.com/llegaspo/WhatsUP.git)
+    cd project-127
     ```
 
 2.  **Install dependencies**
