@@ -34,7 +34,7 @@ By applying advanced learnings from industry internships, this project leverages
 
 1.  **Clone the repository**
     ```bash
-    git clone [https://github.com/llegaspo/WhatsUP.git](https://github.com/llegaspo/WhatsUP.git)
+    git clone https://github.com/llegaspo/WhatsUP.git
     cd project-127
     ```
 
