@@ -1,118 +1,395 @@
 "use client";
 
 import React, { useState } from "react";
-import Menu from '@/components/menu/menu-texts';
-import Link from 'next/link';
+import Menu from "@/components/menu/menu-texts";
+import Link from "next/link";
+
+const Icons = {
+  ChevronLeft: () => (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M15 19l-7-7 7-7"
+      />
+    </svg>
+  ),
+  ChevronRight: () => (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M9 5l7 7-7 7"
+      />
+    </svg>
+  ),
+  Trash: () => (
+    <svg
+      className="w-3.5 h-3.5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+      />
+    </svg>
+  ),
+  Edit: () => (
+    <svg
+      className="w-3.5 h-3.5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+      />
+    </svg>
+  ),
+  Plus: () => (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M12 4v16m8-8H4"
+      />
+    </svg>
+  ),
+  Check: () => (
+    <svg
+      className="w-3 h-3"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M5 13l4 4L19 7"
+      />
+    </svg>
+  ),
+};
 
 export default function Calendar() {
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [taskToDelete, setTaskToDelete] = useState(null);
-  
-  // Get the current date for comparison
+  const [taskToDelete, setTaskToDelete] = useState<number | null>(null);
+
   const today = new Date();
-  
-  // Check if we're viewing the current month
-  const isViewingCurrentMonth = 
-    currentMonth.getMonth() === today.getMonth() && 
+
+  const isViewingCurrentMonth =
+    currentMonth.getMonth() === today.getMonth() &&
     currentMonth.getFullYear() === today.getFullYear();
 
-  // Generate dates for the displayed month
   const getDaysInMonth = () => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
-    
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
-    
-    // Add padding for days before the 1st
     const startPadding = firstDay.getDay();
-    // Add padding for days after the last day
     const endPadding = 6 - lastDay.getDay();
-    
+
     const dates = [];
-    
-    // Previous month days
+
     for (let i = startPadding; i > 0; i--) {
       const date = new Date(year, month, -i + 1);
       dates.push({ date, isCurrentMonth: false });
     }
-    
-    // Current month days
+
     for (let i = 1; i <= lastDay.getDate(); i++) {
       const date = new Date(year, month, i);
       dates.push({ date, isCurrentMonth: true });
     }
-    
-    // Next month days
+
     for (let i = 1; i <= endPadding; i++) {
       const date = new Date(year, month + 1, i);
       dates.push({ date, isCurrentMonth: false });
     }
-    
     return dates;
   };
 
   const dates = getDaysInMonth();
-  const monthNames = ["January", "February", "March", "April", "May", "June",
-                     "July", "August", "September", "October", "November", "December"];
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
 
-  // Navigation functions
-  const prevMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
-  };
+  const prevMonth = () =>
+    setCurrentMonth(
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1),
+    );
+  const nextMonth = () =>
+    setCurrentMonth(
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1),
+    );
+  const goToToday = () => setCurrentMonth(new Date());
 
-  const nextMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
-  };
-
-  const goToToday = () => {
-    setCurrentMonth(new Date());
-  };
-
-  // Task state management
   const [tasks, setTasks] = useState([
-    { id: 1, text: "Cover page sa 141", completed: false, priority: "medium" },
-    { id: 2, text: "Finalize project proposal", completed: false, priority: "high" },
-    { id: 3, text: "Meeting with team", completed: true, priority: "low" }
+    {
+      id: 1,
+      text: "Cover page sa 141",
+      completed: false,
+      priority: "medium",
+      date: new Date().getDate(),
+    },
+    {
+      id: 2,
+      text: "Finalize project",
+      completed: false,
+      priority: "high",
+      date: new Date().getDate() + 2,
+    },
+    {
+      id: 3,
+      text: "Team Meeting",
+      completed: true,
+      priority: "low",
+      date: new Date().getDate() - 1,
+    },
   ]);
 
-  const promptDeleteTask = (id) => {
+  const promptDeleteTask = (id: number) => {
     setTaskToDelete(id);
     setShowDeleteModal(true);
   };
 
   const deleteTask = () => {
-    setTasks(tasks.filter(task => task.id !== taskToDelete));
-    setShowDeleteModal(false);
-    setTaskToDelete(null);
+    if (taskToDelete !== null) {
+      setTasks(tasks.filter((task) => task.id !== taskToDelete));
+      setShowDeleteModal(false);
+      setTaskToDelete(null);
+    }
   };
 
-  const cancelDelete = () => {
-    setShowDeleteModal(false);
-    setTaskToDelete(null);
+  const toggleComplete = (id: number) => {
+    setTasks(
+      tasks.map((task) =>
+        task.id === id ? { ...task, completed: !task.completed } : task,
+      ),
+    );
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "high":
+        return "bg-red-50 text-red-700 border-red-100";
+      case "medium":
+        return "bg-amber-50 text-amber-700 border-amber-100";
+      default:
+        return "bg-green-50 text-green-700 border-green-100";
+    }
   };
 
   return (
-    <Menu activeLink="calendar" openModal={() => { }}>
-      <div className="flex flex-col md:flex-row items-start gap-20 p-4 md:p-8 bg-gradient-to-br from-gray-100 to-gray-300 min-h-screen font-sans w-full shadow-xl">
-        {/* Delete Confirmation Modal */}
+    <Menu activeLink="calendar">
+      <div className="min-h-screen bg-slate-50 p-4 md:p-6">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-6">
+          <div className="w-full md:w-80 flex-shrink-0">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col max-h-[600px] sticky top-24">
+              <div className="p-4 bg-red-900 text-white flex justify-between items-center">
+                <div>
+                  <h3 className="text-sm font-bold uppercase tracking-wider">
+                    My Agenda
+                  </h3>
+                  <p className="text-red-200 text-[10px] opacity-80">
+                    {tasks.filter((t) => !t.completed).length} Pending
+                  </p>
+                </div>
+                <Link
+                  href="/addtask"
+                  className="bg-white/10 hover:bg-white/20 p-1.5 rounded transition-colors text-white"
+                >
+                  <Icons.Plus />
+                </Link>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+                {tasks.length > 0 ? (
+                  tasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className={`group flex items-center gap-3 p-3 rounded-lg border transition-all ${task.completed ? "bg-gray-50 border-gray-100 opacity-60" : "bg-white border-gray-100 hover:border-red-200 hover:shadow-sm"}`}
+                    >
+                      <button
+                        onClick={() => toggleComplete(task.id)}
+                        className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${task.completed ? "bg-green-500 border-green-500 text-white" : "border-gray-300 hover:border-red-500"}`}
+                      >
+                        {task.completed && <Icons.Check />}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={`text-xs font-semibold truncate ${task.completed ? "line-through" : "text-gray-800"}`}
+                        >
+                          {task.text}
+                        </p>
+                        <span
+                          className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded mt-1 inline-block border ${getPriorityColor(task.priority)}`}
+                        >
+                          {task.priority}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => promptDeleteTask(task.id)}
+                        className="text-gray-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Icons.Trash />
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-xs text-gray-400">
+                    No tasks.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-5 py-4 flex justify-between items-center border-b border-gray-100">
+                <h1 className="text-xl font-black text-gray-900">
+                  {monthNames[currentMonth.getMonth()]}{" "}
+                  <span className="text-red-900">
+                    {currentMonth.getFullYear()}
+                  </span>
+                </h1>
+
+                <div className="flex items-center bg-gray-50 p-1 rounded-lg border border-gray-100">
+                  <button
+                    onClick={prevMonth}
+                    className="p-1.5 text-gray-600 hover:text-red-700 hover:bg-white rounded-md transition-all"
+                  >
+                    <Icons.ChevronLeft />
+                  </button>
+                  <button
+                    onClick={goToToday}
+                    className="px-3 py-1 text-xs font-bold text-gray-600 hover:text-red-700 uppercase tracking-wide"
+                  >
+                    Today
+                  </button>
+                  <button
+                    onClick={nextMonth}
+                    className="p-1.5 text-gray-600 hover:text-red-700 hover:bg-white rounded-md transition-all"
+                  >
+                    <Icons.ChevronRight />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-4">
+                <div className="grid grid-cols-7 mb-2">
+                  {days.map((day) => (
+                    <div
+                      key={day}
+                      className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider"
+                    >
+                      {day}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-7 gap-1 md:gap-2">
+                  {dates.map(({ date, isCurrentMonth }, index) => {
+                    const isToday =
+                      isViewingCurrentMonth &&
+                      date.getDate() === today.getDate() &&
+                      isCurrentMonth;
+                    const hasTask = tasks.some(
+                      (t) =>
+                        t.date === date.getDate() &&
+                        isCurrentMonth &&
+                        !t.completed,
+                    );
+
+                    return (
+                      <div
+                        key={index}
+                        className={`
+                                    relative h-16 md:h-24 p-2 rounded-lg border flex flex-col transition-all
+                                    ${
+                                      !isCurrentMonth
+                                        ? "bg-gray-50/50 text-gray-300 border-transparent"
+                                        : isToday
+                                          ? "bg-red-50 border-red-200"
+                                          : "bg-white text-gray-700 border-gray-100 hover:border-red-200"
+                                    }
+                                `}
+                      >
+                        <span
+                          className={`text-sm font-bold ${isToday ? "text-red-700" : ""}`}
+                        >
+                          {date.getDate()}
+                        </span>
+
+                        {hasTask && (
+                          <div className="mt-auto flex justify-end">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {showDeleteModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Deletion</h3>
-              <p className="text-gray-600 mb-6">Are you sure you want to delete this task?</p>
-              <div className="flex justify-end space-x-3">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-5">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">
+                Delete Task?
+              </h3>
+              <div className="flex gap-3 mt-4">
                 <button
-                  onClick={cancelDelete}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  onClick={() => setShowDeleteModal(false)}
+                  className="flex-1 px-3 py-2 bg-gray-100 text-gray-600 font-bold rounded-lg text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={deleteTask}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                  className="flex-1 px-3 py-2 bg-red-600 text-white font-bold rounded-lg text-sm"
                 >
                   Delete
                 </button>
@@ -120,128 +397,6 @@ export default function Calendar() {
             </div>
           </div>
         )}
-
-        {/* Enhanced To Do Sidebar */}
-        <div className="bg-white shadow-lg rounded-md w-full md:w-150 p-6 h-[80vh] overflow-y-auto">
-          <div className="flex justify-between items-center mb-4 bg-[#8b0031] rounded-lg px-4 py-3">
-            <h3 className="text-xl font-semibold text-white">Today's Tasks</h3>
-            <Link href="/addtask" passHref>
-              <button className="bg-white text-[#8b0031] p-2 rounded-full hover:bg-gray-100 transition-colors border-2 border-white">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </Link>
-          </div>
-          
-          <div className="space-y-3">
-            {tasks.map(task => (
-              <div key={task.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded">
-                {/* Delete Button */}
-                <button
-                  onClick={() => promptDeleteTask(task.id)}
-                  className="text-gray-400 hover:text-red-500 transition-colors"
-                  title="Delete task"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                </button>
-
-                {/* Edit Button - Now using Link with href */}
-                <Link href="/edittask" passHref>
-                  <button
-                    className="text-gray-400 hover:text-blue-500 transition-colors"
-                    title="Edit task"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                    </svg>
-                  </button>
-                </Link>
-
-                <span className={`flex-1 ${task.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
-                  {task.text}
-                </span>
-
-                <span className={`w-3 h-3 rounded-full ${
-                  task.priority === 'high' ? 'bg-red-500' : 
-                  task.priority === 'medium' ? 'bg-yellow-500' : 
-                  'bg-green-500'
-                }`}></span>
-              </div>
-            ))}
-            
-            {tasks.length === 0 && (
-              <div className="text-center text-gray-500 py-4">
-                No tasks yet. Click the + button to add one.
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Calendar Grid */}
-        <div className="flex-1 w-full">
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-4xl font-bold text-[#8b0031]">
-              {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-            </h1>
-            <div className="flex gap-2">
-              <button 
-                onClick={prevMonth}
-                className="bg-[#8b0031] text-white px-3 py-2 rounded hover:bg-[#6a0025]"
-              >
-                &lt;
-              </button>
-              <button 
-                onClick={goToToday}
-                className="bg-gray-500 text-white px-2 py-2 rounded hover:bg-gray-600"
-              >
-                Today
-              </button>
-              <button 
-                onClick={nextMonth}
-                className="bg-[#8b0031] text-white px-3 py-2 rounded hover:bg-[#6a0025]"
-              >
-                &gt;
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-7 gap-1 text-center font-medium">
-            {days.map((day) => (
-              <div key={day} className="text-gray-600 text-xl pb-1 font-semibold">
-                {day}
-              </div>
-            ))}
-
-            {dates.map(({ date, isCurrentMonth }, index) => {
-              const isToday = 
-                isViewingCurrentMonth &&
-                date.getDate() === today.getDate() &&
-                isCurrentMonth;
-              
-              return (
-                <div 
-                  key={index}
-                  className={`relative p-3 rounded-lg h-22 w-25 flex flex-col transition-colors
-                    ${!isCurrentMonth ? "text-gray-400 bg-gray-100" : 
-                      isToday ? "bg-[#8b0031] text-white shadow-lg" : 
-                      "bg-white hover:bg-gray-50 text-gray-800"}
-                  `}
-                >
-                  <div className={`relative p-1 rounded-md h-10 w-6 flex items-center justify-center text-lg ${isToday ? "font-bold" : ""}`}>
-                    {date.getDate()}
-                  </div>
-                  {/* You can add event indicators here */}
-                  {isToday && (
-                    <span className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-white"></span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
       </div>
     </Menu>
   );
