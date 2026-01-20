@@ -58,5 +58,5 @@ By applying advanced learnings from industry internships, this project leverages
     ```
 
 ---
-*Developed by Albero, Basmayor, Legaspo, Malig*
+*Developed by llegaspo*
 
