@@ -26,7 +26,7 @@ export default function LoginModal({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleCredentialsLogin = async () => {
+  const handleCredentialsLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useRef, useEffect } from "react";
+import { useSession, signOut } from "next-auth/react";
 import LoginModal from "@/components/modals/login";
 import LogoutIcon from "@/components/ui/LogoutIcon";
 import UserIcon from "@/components/ui/UserIcon";
@@ -14,20 +15,36 @@ interface MenuProps {
 }
 
 export default function Menu({ children, activeLink }: MenuProps) {
+  const { data: session, status } = useSession();
+  const isLoading = status === "loading";
+  const user = session?.user;
+
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-  };
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const closeLoginModal = () => {
-    setIsLoginOpen(false);
-  };
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsUserMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-  const closeRegisterModal = () => {
-    setIsRegisterOpen(false);
+  const closeLoginModal = () => setIsLoginOpen(false);
+  const closeRegisterModal = () => setIsRegisterOpen(false);
+
+  const getUserInitial = () => {
+    if (user?.name) return user.name.charAt(0).toUpperCase();
+    if (user?.email) return user.email.charAt(0).toUpperCase();
+    return "U";
   };
 
   const getLinkClass = (linkName: string) => {
@@ -80,21 +97,43 @@ export default function Menu({ children, activeLink }: MenuProps) {
             </nav>
 
             <div className="flex items-center">
-              {isLoggedIn ? (
-                <div className="flex items-center gap-4">
-                  <div className="hidden md:block text-right">
-                    <p className="text-xs text-red-200 font-medium uppercase tracking-wider">
-                      Welcome
-                    </p>
-                    <p className="text-sm font-bold text-white">Admin</p>
-                  </div>
+              {isLoading ? (
+                // Loading Skeleton
+                <div className="h-10 w-10 animate-pulse rounded-full bg-red-800" />
+              ) : user ? (
+                <div className="relative" ref={dropdownRef}>
                   <button
-                    onClick={handleLogout}
-                    className="p-2 bg-red-950 text-red-200 rounded-full hover:bg-red-800 hover:text-white transition-colors border border-red-800"
-                    title="Logout"
+                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                    className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-amber-500/50 bg-amber-400 text-lg font-black text-red-900 transition-transform hover:scale-105 hover:shadow-lg hover:shadow-amber-500/20 focus:outline-none"
                   >
-                    <LogoutIcon />
+                    {getUserInitial()}
                   </button>
+
+                  {isUserMenuOpen && (
+                    <div className="absolute right-0 mt-3 w-48 origin-top-right rounded-xl bg-white py-1 shadow-2xl ring-1 ring-black ring-opacity-5 animate-in fade-in zoom-in duration-200">
+                      <div className="border-b border-gray-100 px-4 py-3">
+                        <p className="text-xs text-gray-500">Signed in as</p>
+                        <p className="truncate text-sm font-bold text-gray-900">
+                          {user.name || "User"}
+                        </p>
+                      </div>
+
+                      <Link
+                        href="/profile"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#B22222]"
+                      >
+                        Your Profile
+                      </Link>
+
+                      <button
+                        onClick={() => signOut()}
+                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                      >
+                        <LogoutIcon />
+                        Sign out
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <button
@@ -124,12 +163,12 @@ export default function Menu({ children, activeLink }: MenuProps) {
             height={28}
             className="opacity-80 group-hover:opacity-100 transition-opacity"
           />
-          {/* Tooltip */}
           <span className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
             More Info
           </span>
         </Link>
       </div>
+
       <LoginModal
         open={isLoginOpen}
         onClose={closeLoginModal}
