@@ -6,8 +6,10 @@ import { v4 as uuidv4 } from "uuid";
 import Icons from "@/components/events/icons";
 import EventCard, { EventCardProps } from "@/components/events/eventCards";
 import EventFormModal from "@/components/events/eventModal";
+import { useSession } from "next-auth/react";
 
 export default function Events() {
+  const { data: session } = useSession();
   const [events, setEvents] = useState<EventCardProps[]>([]);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [fullScreenEvent, setFullScreenEvent] = useState<null | EventCardProps>(
@@ -81,6 +83,7 @@ export default function Events() {
   }, []);
 
   const handleSaveNew = () => {
+    if (!session) return;
     if (!formData.title || !formData.description || !formData.date) return;
     const newEventWithId = { id: uuidv4(), ...formData };
     const updated = [newEventWithId, ...events];
@@ -91,6 +94,7 @@ export default function Events() {
   };
 
   const handleUpdate = () => {
+    if (!session) return;
     if (editingIndex === null) return;
     const updatedEvents = [...events];
     updatedEvents[editingIndex] = {
@@ -105,6 +109,7 @@ export default function Events() {
   };
 
   const openEditModal = (index: number) => {
+    if (!session) return;
     setEditingIndex(index);
     const { id, ...rest } = events[index];
     setFormData({ ...rest, orgLink: rest.orgLink || "" });
@@ -112,6 +117,7 @@ export default function Events() {
   };
 
   const handleRemove = (index: number) => {
+    if (!session) return;
     if (window.confirm("Delete this event?")) {
       const updated = events.filter((_, i) => i !== index);
       setEvents(updated);
@@ -201,8 +207,16 @@ export default function Events() {
                     {...event}
                     onImageClick={(src) => setPreviewImage(src)}
                     onReadMore={(e) => setFullScreenEvent(e)}
-                    onRemove={() => handleRemove(events.indexOf(event))}
-                    onEdit={() => openEditModal(events.indexOf(event))}
+                    onRemove={
+                      session
+                        ? () => handleRemove(events.indexOf(event))
+                        : undefined
+                    }
+                    onEdit={
+                      session
+                        ? () => openEditModal(events.indexOf(event))
+                        : undefined
+                    }
                   />
                 ))}
               </div>
@@ -231,15 +245,17 @@ export default function Events() {
             )}
           </div>
 
-          <button
-            onClick={() => {
-              setFormData(emptyEventState);
-              setShowModal(true);
-            }}
-            className="fixed bottom-8 right-8 bg-gradient-to-r from-amber-500 to-amber-600 text-white p-4 rounded-full shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 hover:scale-105 transition-all duration-300 z-40 group"
-          >
-            <Icons.Plus />
-          </button>
+          {session && (
+            <button
+              onClick={() => {
+                setFormData(emptyEventState);
+                setShowModal(true);
+              }}
+              className="fixed bottom-8 right-8 bg-gradient-to-r from-amber-500 to-amber-600 text-white p-4 rounded-full shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 hover:scale-105 transition-all duration-300 z-40 group"
+            >
+              <Icons.Plus />
+            </button>
+          )}
 
           <EventFormModal
             isOpen={showModal}
