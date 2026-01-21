@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const AnnouncementSchema = z.object({
   title: z.string(),
@@ -7,61 +7,67 @@ export const AnnouncementSchema = z.object({
   createdAt: z.date(),
   source: z.string(),
   sourceLink: z.string().url().optional(),
-  imageLink: z.string(),
+  image: z.string(),
   fbPostID: z.string().optional(),
-})
+});
 
-export const AddAnnouncementSchema = AnnouncementSchema
-  .superRefine((data, ctx) => {
-    if(data.title.trim() === '')
+export const AddAnnouncementSchema = AnnouncementSchema.superRefine(
+  (data, ctx) => {
+    if (data.title.trim() === "")
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ['title'],
-        message: "Title cannot be empty."
-    })
-    if(data.source !== 'CUSTOM' && (!data.sourceLink || data.sourceLink.trim() === ''))
+        path: ["title"],
+        message: "Title cannot be empty.",
+      });
+    if (
+      data.source !== "CUSTOM" &&
+      (!data.sourceLink || data.sourceLink.trim() === "")
+    )
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ['sourceLink'],
-        message: 'Source URL cannot be empty for non-custom sources.'
-    })
-})
+        path: ["sourceLink"],
+        message: "Source URL cannot be empty for non-custom sources.",
+      });
+  },
+);
 
-export type AddAnnouncementSchemaType = z.infer<typeof AddAnnouncementSchema>
+export type AddAnnouncementSchemaType = z.infer<typeof AddAnnouncementSchema>;
 
-export const AddAnnouncementSchemaDefault : AddAnnouncementSchemaType = {
-  title: '',
-  description: '',
-  createdBy: '',
+export const AddAnnouncementSchemaDefault: AddAnnouncementSchemaType = {
+  title: "",
+  description: "",
+  createdBy: "",
   createdAt: new Date(),
-  source: '',
-  sourceLink: '',
-  imageLink: ''
-}
+  source: "",
+  sourceLink: "",
+  image: "",
+};
 
 export const EditAnnouncementSchema = AnnouncementSchema.extend({
-  id: z.string().cuid()
-})
+  id: z.string().cuid(),
+});
 
-export type EditAnnouncementSchemaType = z.infer<typeof EditAnnouncementSchema>
+export type EditAnnouncementSchemaType = z.infer<typeof EditAnnouncementSchema>;
 
-export const  EditAnnouncementSchemaDefault : EditAnnouncementSchemaType = {
-  id: '',
-  title: '',
-  createdBy: '',
+export const EditAnnouncementSchemaDefault: EditAnnouncementSchemaType = {
+  id: "",
+  title: "",
+  createdBy: "",
   createdAt: new Date(),
-  description: '',
-  source: '',
-  sourceLink: '',
-  imageLink: ''
-}
+  description: "",
+  source: "",
+  sourceLink: "",
+  image: "",
+};
 
 export const DeleteAnnouncementSchema = z.object({
-  id: z.string().cuid()
-})
+  id: z.string().cuid(),
+});
 
-export type DeleteAnnouncementSchemaType = z.infer<typeof DeleteAnnouncementSchema>
+export type DeleteAnnouncementSchemaType = z.infer<
+  typeof DeleteAnnouncementSchema
+>;
 
-export const DeleteAnnouncementSchemaDefaults : DeleteAnnouncementSchemaType = {
-  id: '',
-}
+export const DeleteAnnouncementSchemaDefaults: DeleteAnnouncementSchemaType = {
+  id: "",
+};

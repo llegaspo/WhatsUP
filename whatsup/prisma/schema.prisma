@@ -77,10 +77,12 @@ model Announcement {
   id              String          @id @default(cuid()) @map("ann_ID")
   userID          String          @map("user_ID")
   title           String
+  image           String?
   description     String?         @db.Text
   createdBy       String
   createdAt       DateTime        @db.Timestamptz()
-  Source          AnnouncementSource
+  source          AnnouncementSource
+  sourceLink      String?
 
   user            User            @relation(fields:[userID], references: [id], onDelete: Cascade)
   fbPost          FacebookPost?
