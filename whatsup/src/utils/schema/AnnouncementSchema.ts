@@ -1,11 +1,12 @@
 import { z } from "zod";
+import { AnnouncementSource } from "@prisma/client";
 
 export const AnnouncementSchema = z.object({
   title: z.string(),
   description: z.string().optional(),
   createdBy: z.string(),
   createdAt: z.date(),
-  source: z.string(),
+  source: z.nativeEnum(AnnouncementSource),
   sourceLink: z.string().url().optional(),
   image: z.string(),
   fbPostID: z.string().optional(),
@@ -26,7 +27,7 @@ export const AddAnnouncementSchema = AnnouncementSchema.superRefine(
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["sourceLink"],
-        message: "Source URL cannot be empty for non-custom sources.",
+        message: "Source URL cannot be empty for non-custom seources.",
       });
   },
 );
@@ -38,7 +39,7 @@ export const AddAnnouncementSchemaDefault: AddAnnouncementSchemaType = {
   description: "",
   createdBy: "",
   createdAt: new Date(),
-  source: "",
+  source: AnnouncementSource.FACEBOOK,
   sourceLink: "",
   image: "",
 };
@@ -55,7 +56,7 @@ export const EditAnnouncementSchemaDefault: EditAnnouncementSchemaType = {
   createdBy: "",
   createdAt: new Date(),
   description: "",
-  source: "",
+  source: AnnouncementSource.FACEBOOK,
   sourceLink: "",
   image: "",
 };
