@@ -14,7 +14,7 @@ interface ToDoItem {
   completed?: boolean;
 }
 
-const getPriorityStyles = (priority: PriorityType) => {
+export const getPriorityStyles = (priority: PriorityType) => {
   switch (priority) {
     case PriorityType.URGENT:
       return "bg-red-50 text-red-700 border-red-200";

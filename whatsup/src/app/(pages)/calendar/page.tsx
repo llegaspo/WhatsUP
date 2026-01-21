@@ -5,7 +5,7 @@ import Menu from "@/components/menu/menu-texts";
 import { useSession } from "next-auth/react";
 import { PriorityType } from "@prisma/client";
 import Icons from "@/components/calendar/icons";
-import TaskModal from "@/components/calendar/taskModal";
+import TaskModal, { getPriorityStyles } from "@/components/calendar/taskModal";
 
 interface ToDoItem {
   id: string;
