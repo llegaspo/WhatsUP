@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import Menu from "@/components/menu/menu-texts";
 import Image from "next/image";
 import Link from "next/link";
-import { v4 as uuidv4 } from "uuid";
+import { trpc } from "@/server/client";
+import { PageType } from "@prisma/client";
+import Icons from "@/components/facebook-pages/icons";
+import SkeletonCard from "@/components/facebook-pages/skeletonCard";
 
-type PageType = "admin" | "organizations" | "federations" | "academic";
+type PageTypeKey = "admin" | "organizations" | "federations" | "academic";
 
 interface FbPage {
   id: string;
@@ -15,349 +18,352 @@ interface FbPage {
   link: string;
 }
 
-const initialFbPages: Record<PageType, FbPage[]> = {
-  admin: [
-    {
-      id: "1",
-      name: "University of the Philippines Cebu",
-      image: "/upcebu.jpg",
-      link: "https://www.facebook.com/upcebuofficial",
-    },
-    {
-      id: "2",
-      name: "UP Cebu Office of the University Registrar",
-      image: "/our.jpg",
-      link: "https://www.facebook.com/our.upcebu",
-    },
-    {
-      id: "3",
-      name: "UP Cebu Office of Student Affairs",
-      image: "/osa.jpg",
-      link: "https://www.facebook.com/osa.upcebu",
-    },
-    {
-      id: "4",
-      name: "UP Cebu Teaching and Learning Resource Center",
-      image: "/tlrc.jpg",
-      link: "https://www.facebook.com/upcebutlrc",
-    },
-  ],
-  organizations: [
-    {
-      id: "5",
-      name: "UP Cebu University Student Council",
-      image: "/upcusc.jpg",
-      link: "https://www.facebook.com/upcebuofficial",
-    },
-    {
-      id: "6",
-      name: "Unified Student Organizations",
-      image: "/uniso.jpg",
-      link: "https://www.facebook.com/upcuniso ",
-    },
-    {
-      id: "7",
-      name: "UP Cebu Tug-A  ni",
-      image: "/tugani.jpg",
-      link: "https://www.facebook.com/upcebutugani",
-    },
-    {
-      id: "8",
-      name: "UP Cebu University Student Council",
-      image: "/upcusc.jpg",
-      link: "https://www.facebook.com/upcebuofficial",
-    },
-  ],
-  federations: [
-    {
-      id: "9",
-      name: "UP Cebu Sciences Federation",
-      image: "/scions.jpg",
-      link: "https://www.facebook.com/upcebuofficial",
-    },
-    {
-      id: "10",
-      name: "UP Cebu College of Social Sciences",
-      image: "/socsci.jpg",
-      link: "https://www.facebook.com/upcebusocsci",
-    },
-    {
-      id: "11",
-      name: "UP Cebu College of Communication Art and Design",
-      image: "/ccad.jpg",
-      link: "https://www.facebook.com/ccadupcebu",
-    },
-    {
-      id: "12",
-      name: "UP Cebu School of Management",
-      image: "/som.jpg",
-      link: "https://www.facebook.com/upcebusom",
-    },
-  ],
-  academic: [],
-};
-
 export default function FacebookPages() {
-  const [fbPages, setFbPages] =
-    useState<Record<PageType, FbPage[]>>(initialFbPages);
-  const [hasMounted, setHasMounted] = useState(false);
+  const {
+    data: pagesData,
+    isLoading,
+    refetch,
+  } = trpc.fbPage.fetchAll.useQuery();
+
+  const createMutation = trpc.fbPage.create.useMutation({
+    onSuccess: () => {
+      refetch();
+      setShowModal(false);
+      resetForm();
+    },
+  });
+
+  const deleteMutation = trpc.fbPage.delete.useMutation({
+    onSuccess: () => refetch(),
+  });
+
+  const updateMutation = trpc.fbPage.update.useMutation({
+    onSuccess: () => {
+      refetch();
+      setShowModal(false);
+    },
+  });
+
+  const fbPages = useMemo(() => {
+    const grouped: Record<PageTypeKey, FbPage[]> = {
+      admin: [],
+      organizations: [],
+      federations: [],
+      academic: [],
+    };
+
+    if (!pagesData || !Array.isArray(pagesData)) return grouped;
+
+    pagesData.forEach((page) => {
+      const formatted: FbPage = {
+        id: page.pageName,
+        name: page.pageName,
+        image: page.image || "/upcebu.jpg",
+        link: page.url,
+      };
+
+      switch (page.type) {
+        case "ADMIN":
+          grouped.admin.push(formatted);
+          break;
+        case "ORGANIZATION":
+          grouped.organizations.push(formatted);
+          break;
+        case "FEDERATION":
+          grouped.federations.push(formatted);
+          break;
+        case "ACADEMIC":
+          grouped.academic.push(formatted);
+          break;
+      }
+    });
+    return grouped;
+  }, [pagesData]);
+
   const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [form, setForm] = useState({
-    id: "",
     name: "",
     image: "",
     link: "",
-    type: "admin" as PageType,
+    type: "admin" as PageTypeKey,
   });
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [hasChanges, setHasChanges] = useState(false);
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("fbPages");
-      if (saved) {
-        try {
-          setFbPages(JSON.parse(saved));
-        } catch (e) {
-          console.error("Failed to parse fbPages from localStorage:", e);
-        }
-      }
-      setHasMounted(true);
-    }
-  }, []);
-
-  // Save to localStorage whenever fbPages change
-  useEffect(() => {
-    if (hasChanges) {
-      localStorage.setItem("fbPages", JSON.stringify(fbPages));
-      setHasChanges(false);
-    }
-  }, [fbPages, hasChanges]);
-
-  const handleAddPage = () => {
-    if (!form.name || !form.image || !form.link) return;
-
-    const newPage = {
-      id: editingId || uuidv4(),
-      name: form.name,
-      image: form.image,
-      link: form.link,
-    };
-
-    let updated: Record<PageType, FbPage[]>;
-    setFbPages((prev) => {
-      if (editingId) {
-        updated = { ...prev };
-        for (const type in updated) {
-          const index = updated[type as PageType].findIndex(
-            (p) => p.id === editingId,
-          );
-          if (index !== -1) {
-            updated[type as PageType][index] = newPage;
-            break;
-          }
-        }
-      } else {
-        updated = {
-          ...prev,
-          [form.type]: [...prev[form.type], newPage],
-        };
-      }
-      return updated;
-    });
-
-    setHasChanges(true);
-    setShowModal(false);
-    setForm({ id: "", name: "", image: "", link: "", type: "admin" });
+  const resetForm = () => {
+    setForm({ name: "", image: "", link: "", type: "admin" });
     setEditingId(null);
   };
 
-  const handleRemovePage = (type: PageType, id: string) => {
-    if (window.confirm("Are you sure you want to remove this page?")) {
-      setFbPages((prev) => ({
-        ...prev,
-        [type]: prev[type].filter((page) => page.id !== id),
-      }));
-      setHasChanges(true);
+  const handleAddPage = () => {
+    if (!form.name || !form.link) return;
+    const payload = {
+      pageName: editingId || form.name,
+      url: form.link,
+      type: form.type.toUpperCase() as PageType,
+      image: form.image,
+    };
+
+    if (editingId) {
+      updateMutation.mutate({ ...payload, pageName: editingId });
+    } else {
+      createMutation.mutate(payload);
     }
   };
 
-  const handleEditPage = (page: FbPage, type: PageType) => {
-    setForm({
-      id: page.id,
-      name: page.name,
-      image: page.image,
-      link: page.link,
-      type,
-    });
+  const handleRemovePage = (id: string) => {
+    if (confirm("Are you sure you want to delete this page?")) {
+      deleteMutation.mutate({ pageName: id });
+    }
+  };
+
+  const handleEditPage = (page: FbPage, type: PageTypeKey) => {
+    setForm({ name: page.name, image: page.image, link: page.link, type });
     setEditingId(page.id);
     setShowModal(true);
   };
 
   const filteredPages = (pages: FbPage[]) => {
-    return pages.filter(
-      (page) =>
-        page.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        page.link.toLowerCase().includes(searchQuery.toLowerCase()),
+    return pages.filter((p) =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()),
     );
   };
 
   return (
-    <div className="relative flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-gray-50 font-sans text-gray-900">
       <Menu activeLink="fb-pages">
-        <main className="flex-grow p-8 mx-auto max-w-7xl w-full">
-          <h1 className="text-4xl font-bold text-[#89132f] text-center mb-6">
-            UP Cebu Facebook Pages
-          </h1>
+        <main className="flex-grow p-6 md:p-10 mx-auto max-w-7xl w-full">
+          {/* HEADER SECTION */}
+          <div className="flex flex-col items-center justify-center mb-12 space-y-6">
+            <h1 className="text-3xl md:text-5xl font-extrabold text-[#89132f] tracking-tight text-center">
+              UP Cebu Facebook Pages
+            </h1>
 
-          <div className="mb-6">
-            <input
-              type="text"
-              placeholder="Search pages..."
-              className="w-full p-2 border border-gray-300 rounded text-sm"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <div className="relative w-full max-w-lg group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Icons.Search />
+              </div>
+              <input
+                type="text"
+                placeholder="Search for a page..."
+                className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-full shadow-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#89132f]/20 focus:border-[#89132f] transition-all"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
 
-          {Object.entries(fbPages).map(([section, pages]) => (
-            <div key={section} className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4 capitalize text-red-800">
-                {section === "organizations"
-                  ? "Student Organizations"
-                  : section === "federations"
-                    ? "College Federations"
-                    : section == "academic"
-                      ? "Academic Organizations"
-                      : section.replace(/^\w/, (c) => c.toUpperCase())}
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 text-center text-gray-500">
-                {filteredPages(pages).map((page) => (
-                  <div
-                    key={page.id}
-                    className="relative flex flex-col items-center"
-                  >
-                    <div className="absolute top-0 right-0 flex gap-1">
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleEditPage(page, section as PageType);
-                        }}
-                        className="bg-white text-gray-500 rounded-full w-6 h-6 flex items-center justify-center text-xs z-10 hover:bg-gray-100 hover:text-blue-500 border border-gray-300"
-                        title="Edit page"
-                      >
-                        ✎
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleRemovePage(section as PageType, page.id);
-                        }}
-                        className="bg-white text-gray-500 rounded-full w-6 h-6 flex items-center justify-center text-xs z-10 hover:bg-gray-100 hover:text-red-500 border border-gray-300"
-                        title="Remove page"
-                      >
-                        ×
-                      </button>
-                    </div>
-                    <Link
-                      href={page.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex flex-col items-center gap-2 w-full text-xs"
-                    >
-                      <img
-                        src={page.image}
-                        alt={page.name}
-                        width={200}
-                        height={200}
-                        className="rounded-full"
-                      />
-                      <span>{page.name}</span>
-                    </Link>
-                  </div>
-                ))}
-              </div>
+          {/* CONTENT AREA */}
+          {isLoading ? (
+            /* Loading Skeleton Grid */
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+              {[...Array(8)].map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
             </div>
-          ))}
+          ) : (
+            <div className="space-y-16">
+              {Object.entries(fbPages).map(([section, pages]) => {
+                const visible = filteredPages(pages);
+                if (visible.length === 0) return null;
+
+                return (
+                  <div
+                    key={section}
+                    className="animate-in fade-in duration-500"
+                  >
+                    <div className="flex items-center gap-4 mb-6">
+                      <h2 className="text-2xl font-bold capitalize text-gray-800">
+                        {section}
+                      </h2>
+                      <div className="h-px bg-gray-200 flex-grow rounded-full"></div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                      {visible.map((page) => (
+                        <div
+                          key={page.id}
+                          className="group relative bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                        >
+                          {/* EDIT / DELETE ACTIONS */}
+                          <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditPage(page, section as any);
+                              }}
+                              className="p-2 bg-white text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full shadow-sm border border-gray-100 transition-colors"
+                              title="Edit"
+                            >
+                              <Icons.Edit />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemovePage(page.id);
+                              }}
+                              className="p-2 bg-white text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full shadow-sm border border-gray-100 transition-colors"
+                              title="Delete"
+                            >
+                              <Icons.Trash />
+                            </button>
+                          </div>
+
+                          {/* CARD CONTENT */}
+                          <Link
+                            href={page.link}
+                            target="_blank"
+                            className="flex flex-col items-center w-full text-center group-hover:opacity-90"
+                          >
+                            <div className="relative w-28 h-28 mb-4 p-1 rounded-full border-2 border-gray-100 bg-white shadow-inner">
+                              <Image
+                                src={page.image}
+                                alt={page.name}
+                                fill
+                                className="object-cover rounded-full"
+                              />
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900 line-clamp-2 leading-tight">
+                              {page.name}
+                            </h3>
+                            <div className="mt-2 flex items-center text-xs font-medium text-[#89132f]">
+                              Visit Page <Icons.ExternalLink />
+                            </div>
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* EMPTY STATE */}
+              {!isLoading &&
+                Object.values(fbPages).every(
+                  (p) => filteredPages(p).length === 0,
+                ) && (
+                  <div className="text-center py-20">
+                    <p className="text-gray-400 text-lg">
+                      No pages found matching "{searchQuery}"
+                    </p>
+                  </div>
+                )}
+            </div>
+          )}
         </main>
       </Menu>
 
+      {/* FAB ADD BUTTON */}
       <button
-        onClick={() => setShowModal(true)}
-        className="fixed bottom-6 right-6 bg-red-900 hover:bg-red-800 text-white text-3xl w-14 h-14 rounded-full shadow-lg flex items-center justify-center"
+        onClick={() => {
+          resetForm();
+          setShowModal(true);
+        }}
+        className="fixed bottom-8 right-8 bg-[#89132f] text-white w-14 h-14 rounded-full shadow-lg shadow-[#89132f]/40 flex items-center justify-center hover:scale-110 hover:bg-[#a01636] transition-all duration-300 z-40"
+        aria-label="Add Page"
       >
-        +
+        <Icons.Plus />
       </button>
 
+      {/* MODAL */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-[90%] max-w-md shadow-lg">
-            <h2 className="text-xl font-semibold mb-4">
-              {editingId ? "Edit Facebook Page" : "Add Facebook Page"}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/30 animate-in fade-in duration-200">
+          <div className="fixed inset-0" onClick={() => setShowModal(false)} />
+          <div className="relative bg-white rounded-2xl w-full max-w-lg p-8 shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 border-b pb-4">
+              {editingId ? "Edit Page Details" : "Add New Page"}
             </h2>
-            <div className="space-y-3">
-              <input
-                type="text"
-                placeholder="Page Name"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full p-2 border border-gray-300 rounded"
-              />
-              <input
-                type="text"
-                placeholder="Image URL"
-                value={form.image}
-                onChange={(e) => setForm({ ...form, image: e.target.value })}
-                className="w-full p-2 border border-gray-300 rounded"
-              />
-              <input
-                type="text"
-                placeholder="Facebook Link"
-                value={form.link}
-                onChange={(e) => setForm({ ...form, link: e.target.value })}
-                className="w-full p-2 border border-gray-300 rounded"
-              />
-              {!editingId && (
-                <select
-                  value={form.type}
-                  onChange={(e) =>
-                    setForm({ ...form, type: e.target.value as PageType })
-                  }
-                  className="w-full p-2 border border-gray-300 rounded"
-                >
-                  <option value="admin">Admin</option>
-                  <option value="organizations">Student Organizations</option>
-                  <option value="federations">College Federations</option>
-                  <option value="academic">Academic Organizations</option>
-                </select>
-              )}
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => {
-                    setShowModal(false);
-                    setForm({
-                      id: "",
-                      name: "",
-                      image: "",
-                      link: "",
-                      type: "admin",
-                    });
-                    setEditingId(null);
-                  }}
-                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAddPage}
-                  className="px-4 py-2 bg-red-900 text-white rounded hover:bg-red-800"
-                >
-                  {editingId ? "Save Changes" : "Add"}
-                </button>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Page Name
+                </label>
+                <input
+                  disabled={!!editingId} // Usually ID shouldn't change on edit
+                  placeholder="e.g., UP Cebu Student Council"
+                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#89132f] focus:border-transparent transition-all disabled:opacity-60"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Image URL
+                </label>
+                <input
+                  placeholder="https://..."
+                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#89132f] focus:border-transparent transition-all"
+                  value={form.image}
+                  onChange={(e) => setForm({ ...form, image: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Facebook Link
+                </label>
+                <input
+                  placeholder="https://facebook.com/..."
+                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#89132f] focus:border-transparent transition-all"
+                  value={form.link}
+                  onChange={(e) => setForm({ ...form, link: e.target.value })}
+                />
+              </div>
+
+              {!editingId && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Category
+                  </label>
+                  <div className="relative">
+                    <select
+                      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#89132f] focus:border-transparent transition-all appearance-none"
+                      value={form.type}
+                      onChange={(e) =>
+                        setForm({ ...form, type: e.target.value as any })
+                      }
+                    >
+                      <option value="admin">Admin</option>
+                      <option value="organizations">Organizations</option>
+                      <option value="federations">Federations</option>
+                      <option value="academic">Academic</option>
+                    </select>
+                    {/* Custom arrow for select */}
+                    <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 pt-8">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-5 py-2.5 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddPage}
+                className="px-6 py-2.5 bg-[#89132f] hover:bg-[#700f26] text-white font-medium rounded-lg shadow-md transition-colors"
+              >
+                {editingId ? "Save Changes" : "Add Page"}
+              </button>
             </div>
           </div>
         </div>
@@ -365,4 +371,3 @@ export default function FacebookPages() {
     </div>
   );
 }
-

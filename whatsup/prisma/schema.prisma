@@ -144,16 +144,15 @@ model ToDo {
 
 enum PageType{
   ADMIN
-  STUDENT
-  COLLEGE
+  ORGANIZATION
+  FEDERATION
   ACADEMIC
   INTEREST
-  MASS
-
 }
 model FBPage {
   pageName        String          @id
   url             String
+  image           String?
   type            PageType
 
   facebookPost    FacebookPost[]
