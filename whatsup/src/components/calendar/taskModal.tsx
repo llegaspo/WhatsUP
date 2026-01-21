@@ -27,6 +27,12 @@ export const getPriorityStyles = (priority: PriorityType) => {
   }
 };
 
+interface TaskFormData {
+  title: string;
+  description: string;
+  priority: PriorityType;
+}
+
 interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -44,10 +50,10 @@ export default function TaskModal({
   canEdit,
   onSave,
 }: TaskModalProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<TaskFormData>({
     title: "",
     description: "",
-    priority: PriorityType.URGENT,
+    priority: PriorityType.IMPORTANT,
   });
 
   useEffect(() => {
@@ -55,7 +61,7 @@ export default function TaskModal({
       setFormData({
         title: "",
         description: "",
-        priority: PriorityType.URGENT,
+        priority: PriorityType.IMPORTANT,
       });
     }
   }, [isOpen, selectedDate]);
