@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Facebook_Post" ALTER COLUMN "ann_ID" DROP NOT NULL,
+ALTER COLUMN "page_Name" DROP NOT NULL;

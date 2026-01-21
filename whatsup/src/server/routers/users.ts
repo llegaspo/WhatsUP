@@ -6,7 +6,6 @@ import {
   RegisterSchema,
   FetchUserSchema,
 } from "@/utils/schema/UserSchema";
-import { prisma } from "@/server/db";
 import bcrypt from "bcryptjs";
 
 export const userRouter = router({
@@ -25,7 +24,6 @@ export const userRouter = router({
         });
       }
 
-      // 2. Hash Password
       const hashedPassword = await bcrypt.hash(input.password, 10);
 
       const { confirmPassword, confirmEmail, password, ...userData } = input;

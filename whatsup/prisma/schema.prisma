@@ -99,9 +99,9 @@ enum StatusType{
 
 model FacebookPost {
   id              String          @id @default(cuid())
-  annID           String          @map("ann_ID") @unique
+  annID           String?          @map("ann_ID") @unique
   userID          String          @map("user_ID")
-  pageName        String          @map("page_Name")
+  pageName        String?          @map("page_Name")
   fbPostID        String          @unique @map("FB_Post_Id")
   author          String
   content         String          @db.Text
@@ -109,9 +109,9 @@ model FacebookPost {
   createdAt       DateTime        @db.Timestamptz()
   status          StatusType
 
-  announcement    Announcement    @relation(fields:[annID], references: [id], onDelete: Cascade)
+  announcement    Announcement?    @relation(fields:[annID], references: [id], onDelete: Cascade)
   user            User            @relation(fields:[userID], references: [id], onDelete: Cascade)
-  fbPageName      FBPage          @relation(fields:[pageName], references: [pageName], onDelete: Cascade)
+  fbPageName      FBPage?          @relation(fields:[pageName], references: [pageName], onDelete: Cascade)
 
   todos           ToDo[]
 
