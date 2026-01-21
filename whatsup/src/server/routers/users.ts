@@ -6,7 +6,21 @@ import {
   RegisterSchema,
   FetchUserSchema,
 } from "@/utils/schema/UserSchema";
+import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
+
+const defaultUserSelect = Prisma.validator<Prisma.UserSelect>()({
+  id: true,
+  username: true,
+  email: true,
+  role: true,
+  createdAt: true,
+  fname: true,
+  lname: true,
+  mname: true,
+  image: true,
+  name: true,
+});
 
 export const userRouter = router({
   create: publicProcedure
@@ -26,7 +40,8 @@ export const userRouter = router({
 
       const hashedPassword = await bcrypt.hash(input.password, 10);
 
-      const { confirmPassword, confirmEmail, password, ...userData } = input;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { confirmPassword, password, ...userData } = input;
 
       try {
         const newUser = await ctx.prisma.user.create({
@@ -36,14 +51,14 @@ export const userRouter = router({
             role: "USER",
             last_login_at: new Date(),
           },
+          select: defaultUserSelect,
         });
 
         return {
           message: "User Created Successfully",
           userId: newUser.id,
         };
-      } catch (e) {
-        console.error(e);
+      } catch {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Something went wrong while creating the account.",
@@ -56,6 +71,7 @@ export const userRouter = router({
     .query(async ({ ctx, input }) => {
       const user = await ctx.prisma.user.findUnique({
         where: { id: input.id },
+        select: defaultUserSelect,
       });
 
       if (!user) {
@@ -69,28 +85,26 @@ export const userRouter = router({
     }),
 
   fetchAll: protectedProcedure.query(async ({ ctx }) => {
-    const users = await ctx.prisma.user.findMany();
+    const users = await ctx.prisma.user.findMany({
+      select: defaultUserSelect,
+    });
     return users;
   }),
 
   delete: protectedProcedure
     .input(DeleteUserSchema)
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx }) => {
+      const userIdToDelete = ctx.session.user.id;
+
       try {
-        if (ctx.session.user.id !== input.id /* && !isAdmin */) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "You can only delete your own account",
-          });
-        }
-        const userDelete = await ctx.prisma.user.delete({
+        await ctx.prisma.user.delete({
           where: {
-            id: input.id,
+            id: userIdToDelete,
           },
         });
 
         return { message: "User has been removed successfully." };
-      } catch (e) {
+      } catch {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "User not found or already deleted.",
@@ -101,8 +115,8 @@ export const userRouter = router({
   update: protectedProcedure
     .input(EditUserSchema)
     .mutation(async ({ ctx, input }) => {
-      const { password, ...otherData } = input;
-      const dataToUpdate: any = { ...otherData };
+      const { password, id, ...otherData } = input;
+      const dataToUpdate: Prisma.UserUpdateInput = { ...otherData };
 
       if (password && password.trim() !== "") {
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -114,19 +128,11 @@ export const userRouter = router({
             id: ctx.session.user.id,
           },
           data: dataToUpdate,
+          select: defaultUserSelect,
         });
 
-        if (!userUpdate)
-          return { message: "Cannot update user's credentials." };
-
         return { message: "Profile updated successfully", user: userUpdate };
-      } catch (error: any) {
-        if (error.code === "P2002") {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message: "Username or Email already taken",
-          });
-        }
+      } catch {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to update profile",
