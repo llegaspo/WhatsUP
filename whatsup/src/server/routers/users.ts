@@ -1,104 +1,138 @@
-import { router, publicProcedure } from '../trpc'
-import { EditUserSchema,
-         DeleteUserSchema,
-         RegisterSchema,
-         FetchUserSchema} from '@/utils/schema/UserSchema'
-import { prisma } from '@/server/db';
-
+import { router, publicProcedure, protectedProcedure } from "../trpc";
+import { TRPCError } from "@trpc/server";
+import {
+  EditUserSchema,
+  DeleteUserSchema,
+  RegisterSchema,
+  FetchUserSchema,
+} from "@/utils/schema/UserSchema";
+import { prisma } from "@/server/db";
+import bcrypt from "bcryptjs";
 
 export const userRouter = router({
   create: publicProcedure
     .input(RegisterSchema)
-    .mutation(async ({input}) =>{
-      try{
-        const newUser = await prisma.user.create({
-          data: {
-            ...input,
-          createdAt: new Date(),
-          role: 'USER',
-          last_login_at: new Date(),
+    .mutation(async ({ ctx, input }) => {
+      const exists = await ctx.prisma.user.findFirst({
+        where: {
+          OR: [{ email: input.email }, { username: input.username }],
         },
       });
-      if(newUser)
-        return {message: 'User Created Successfully'}
-      else
-        return {message: 'User cannot be created'}
- }
-    catch(e){
-      throw new Error("An error has occured.")
-    }
-  }),
+      if (exists) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "User with this email or username already exists.",
+        });
+      }
+
+      // 2. Hash Password
+      const hashedPassword = await bcrypt.hash(input.password, 10);
+
+      const { confirmPassword, confirmEmail, password, ...userData } = input;
+
+      try {
+        const newUser = await ctx.prisma.user.create({
+          data: {
+            ...userData,
+            password: hashedPassword,
+            role: "USER",
+            last_login_at: new Date(),
+          },
+        });
+
+        return {
+          message: "User Created Successfully",
+          userId: newUser.id,
+        };
+      } catch (e) {
+        console.error(e);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong while creating the account.",
+        });
+      }
+    }),
 
   fetch: publicProcedure
     .input(FetchUserSchema)
-    .query(async ({input}) => {
-      try{
-        const userResult = await prisma.user.findUnique({
-          where:{
-            id: input.id
-        },
-      })
-      if(!userResult){
-        return {message: 'No such user exist.'}
-      }
-      return userResult;
-    } catch (e){
-      throw new Error("An error has occured while fetching user")
-    }
-  }),
-
-  fetchAll: publicProcedure
-    .query(async () => {
-    try{
-      const users = await prisma.user.findMany();
-      if(!users)
-        return {message: 'Users cannot be fetched.'}
-      return users;
-    } catch(e){
-      throw new Error('An error has occured while fetching users.')
-    }
-  }),
-
-  delete: publicProcedure
-    .input(DeleteUserSchema)
-    .mutation(async ({input}) => {
-      try{
-        const userDelete = await prisma.user.delete({
-          where:{
-            id: input.id,
-        }
-      })
-
-      if(!userDelete)
-        return {message: 'No such user exist.'}
-      return {message: 'User has been removed successfully.'}
-    } catch(e){
-        throw new Error('An error has occured while deleting user')
-    }
-  }),
-
-  update: publicProcedure
-    .input(EditUserSchema)
-    .mutation(async ({input}) => {
-      try{
-        const userUpdate = await prisma.user.update({
-          where: {
-            id: input.id,
-        },
-          data:{
-            fname: input.fname,
-            mname: input.mname,
-            lname: input.lname,
-            username: input.username,
-            email: input.email,
-            password: input.password,
-      }
+    .query(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: input.id },
       });
 
-      if(!userUpdate)
-        return {message: "Cannot update user's credentials."}
-    } catch(e){
-      throw new Error("An error has occured while updating the user.")
-    }
-  })
-})
+      if (!user) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
+      }
+
+      return user;
+    }),
+
+  fetchAll: protectedProcedure.query(async ({ ctx }) => {
+    const users = await ctx.prisma.user.findMany();
+    return users;
+  }),
+
+  delete: protectedProcedure
+    .input(DeleteUserSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        if (ctx.session.user.id !== input.id /* && !isAdmin */) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You can only delete your own account",
+          });
+        }
+        const userDelete = await ctx.prisma.user.delete({
+          where: {
+            id: input.id,
+          },
+        });
+
+        return { message: "User has been removed successfully." };
+      } catch (e) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found or already deleted.",
+        });
+      }
+    }),
+
+  update: protectedProcedure
+    .input(EditUserSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { password, ...otherData } = input;
+      const dataToUpdate: any = { ...otherData };
+
+      if (password && password.trim() !== "") {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        dataToUpdate.password = hashedPassword;
+      }
+      try {
+        const userUpdate = await ctx.prisma.user.update({
+          where: {
+            id: ctx.session.user.id,
+          },
+          data: dataToUpdate,
+        });
+
+        if (!userUpdate)
+          return { message: "Cannot update user's credentials." };
+
+        return { message: "Profile updated successfully", user: userUpdate };
+      } catch (error: any) {
+        if (error.code === "P2002") {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Username or Email already taken",
+          });
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update profile",
+        });
+      }
+    }),
+});

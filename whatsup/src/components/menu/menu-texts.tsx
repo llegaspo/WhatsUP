@@ -4,38 +4,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { ReactNode, useState } from "react";
 import LoginModal from "@/components/modals/login";
-
-const UserIcon = () => (
-  <svg
-    className="w-5 h-5"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="2"
-      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-    />
-  </svg>
-);
-
-const LogoutIcon = () => (
-  <svg
-    className="w-5 h-5"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="2"
-      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-    />
-  </svg>
-);
+import LogoutIcon from "@/components/ui/LogoutIcon";
+import UserIcon from "@/components/ui/UserIcon";
+import RegisterModal from "../modals/register";
 
 interface MenuProps {
   children: ReactNode;
@@ -43,37 +14,20 @@ interface MenuProps {
 }
 
 export default function Menu({ children, activeLink }: MenuProps) {
-  // --- State ---
-  const [open, setOpen] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleLoginClick = () => {
-    if (!email || !password) {
-      setError("Please enter both email and password");
-      return;
-    }
-
-    if (email === "admin@legaspo.com" && password === "legaspo123") {
-      setIsLoggedIn(true);
-      setError("");
-      setOpen(false);
-    } else {
-      setError("Invalid credentials");
-    }
-  };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
-    setEmail("");
-    setPassword("");
   };
 
-  const closeModal = () => {
-    setOpen(false);
-    setError("");
+  const closeLoginModal = () => {
+    setIsLoginOpen(false);
+  };
+
+  const closeRegisterModal = () => {
+    setIsRegisterOpen(false);
   };
 
   const getLinkClass = (linkName: string) => {
@@ -144,7 +98,7 @@ export default function Menu({ children, activeLink }: MenuProps) {
                 </div>
               ) : (
                 <button
-                  onClick={() => setOpen(true)}
+                  onClick={() => setIsLoginOpen(true)}
                   className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-amber-500/30 bg-gradient-to-r from-red-950 to-red-900 text-amber-50 font-bold text-sm shadow-md hover:shadow-amber-500/20 hover:border-amber-500/60 hover:text-amber-400 transition-all duration-300"
                 >
                   <UserIcon />
@@ -176,19 +130,22 @@ export default function Menu({ children, activeLink }: MenuProps) {
           </span>
         </Link>
       </div>
-
-      {/* --- Login Modal --- */}
       <LoginModal
-        open={open}
-        onClose={closeModal}
-        email={email}
-        setEmail={setEmail}
-        password={password}
-        setPassword={setPassword}
-        error={error}
-        handleLoginClick={handleLoginClick}
+        open={isLoginOpen}
+        onClose={closeLoginModal}
+        onSwitchToRegister={() => {
+          setIsLoginOpen(false);
+          setIsRegisterOpen(true);
+        }}
+      />
+      <RegisterModal
+        open={isRegisterOpen}
+        onClose={closeRegisterModal}
+        onSwitchToLogin={() => {
+          setIsRegisterOpen(false);
+          setIsLoginOpen(true);
+        }}
       />
     </div>
   );
 }
-
