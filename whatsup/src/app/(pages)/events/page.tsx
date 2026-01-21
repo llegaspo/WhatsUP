@@ -45,7 +45,7 @@ export default function Events() {
       title: "Annual Research Symposium 2025",
       description:
         "Join the academic community as we explore groundbreaking research. Innovation starts here. Lorem ipsum dolor sit amet.",
-      link: "https://facebook.com/example-post",
+      link: "https://facebook.com/",
     },
     {
       id: "2",
@@ -56,7 +56,7 @@ export default function Events() {
       title: "Science Week: Opening Gala",
       description:
         "A night of celebration for the sciences. Dress code is formal. Food and drinks will be served.",
-      link: "https://facebook.com/example-post",
+      link: "https://facebook.com/",
     },
     {
       id: "3",
@@ -67,7 +67,7 @@ export default function Events() {
       title: "Tech Talk: The Future of AI",
       description:
         "Inviting all CS students to a discussion on Generative AI and Ethics.",
-      link: "https://facebook.com/example-post",
+      link: "https://facebook.com/",
     },
   ];
 
