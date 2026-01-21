@@ -1,6 +1,5 @@
 "use client";
-
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Menu from "@/components/menu/menu-texts";
 import Image from "next/image";
 import Link from "next/link";
@@ -133,7 +132,6 @@ export default function FacebookPages() {
     <div className="flex flex-col min-h-screen bg-gray-50 font-sans text-gray-900">
       <Menu activeLink="fb-pages">
         <main className="flex-grow p-6 md:p-10 mx-auto max-w-7xl w-full">
-          {/* HEADER SECTION */}
           <div className="flex flex-col items-center justify-center mb-12 space-y-6">
             <h1 className="text-3xl md:text-5xl font-extrabold text-[#89132f] tracking-tight text-center">
               UP Cebu Facebook Pages
@@ -153,9 +151,7 @@ export default function FacebookPages() {
             </div>
           </div>
 
-          {/* CONTENT AREA */}
           {isLoading ? (
-            /* Loading Skeleton Grid */
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
               {[...Array(8)].map((_, i) => (
                 <SkeletonCard key={i} />
@@ -185,7 +181,6 @@ export default function FacebookPages() {
                           key={page.id}
                           className="group relative bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
                         >
-                          {/* EDIT / DELETE ACTIONS */}
                           <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
                             <button
                               onClick={(e) => {
@@ -209,7 +204,6 @@ export default function FacebookPages() {
                             </button>
                           </div>
 
-                          {/* CARD CONTENT */}
                           <Link
                             href={page.link}
                             target="_blank"
@@ -237,7 +231,6 @@ export default function FacebookPages() {
                 );
               })}
 
-              {/* EMPTY STATE */}
               {!isLoading &&
                 Object.values(fbPages).every(
                   (p) => filteredPages(p).length === 0,
@@ -253,7 +246,6 @@ export default function FacebookPages() {
         </main>
       </Menu>
 
-      {/* FAB ADD BUTTON */}
       <button
         onClick={() => {
           resetForm();
@@ -265,7 +257,6 @@ export default function FacebookPages() {
         <Icons.Plus />
       </button>
 
-      {/* MODAL */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/30 animate-in fade-in duration-200">
           <div className="fixed inset-0" onClick={() => setShowModal(false)} />
@@ -280,7 +271,7 @@ export default function FacebookPages() {
                   Page Name
                 </label>
                 <input
-                  disabled={!!editingId} // Usually ID shouldn't change on edit
+                  disabled={!!editingId}
                   placeholder="e.g., UP Cebu Student Council"
                   className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#89132f] focus:border-transparent transition-all disabled:opacity-60"
                   value={form.name}
@@ -330,7 +321,6 @@ export default function FacebookPages() {
                       <option value="federations">Federations</option>
                       <option value="academic">Academic</option>
                     </select>
-                    {/* Custom arrow for select */}
                     <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500">
                       <svg
                         className="w-4 h-4"

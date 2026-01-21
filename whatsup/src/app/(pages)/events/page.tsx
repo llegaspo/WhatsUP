@@ -1,296 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Menu from "@/components/menu/menu-texts";
 import { v4 as uuidv4 } from "uuid";
-
-interface EventCardProps {
-  id: string;
-  imageSrc: string;
-  date: string;
-  org: string;
-  orgLink?: string;
-  title: string;
-  description: string;
-  link: string;
-  onReadMore?: (event: EventCardProps) => void;
-  onImageClick?: (imageSrc: string) => void;
-  onRemove?: () => void;
-  onEdit?: () => void;
-}
-
-const Icons = {
-  Search: () => (
-    <svg
-      className="w-5 h-5 text-red-800"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-      />
-    </svg>
-  ),
-  Calendar: () => (
-    <svg
-      className="w-4 h-4 mr-1"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-      />
-    </svg>
-  ),
-  Edit: () => (
-    <svg
-      className="w-4 h-4"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-      />
-    </svg>
-  ),
-  Trash: () => (
-    <svg
-      className="w-4 h-4"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-      />
-    </svg>
-  ),
-  Plus: () => (
-    <svg
-      className="w-6 h-6"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M12 4v16m8-8H4"
-      />
-    </svg>
-  ),
-  External: () => (
-    <svg
-      className="w-4 h-4"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-      />
-    </svg>
-  ),
-  Sort: () => (
-    <svg
-      className="w-5 h-5 text-gray-500"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
-      />
-    </svg>
-  ),
-};
-
-const formatDate = (dateString: string) => {
-  if (!dateString) return "";
-  const date = new Date(dateString);
-  return isNaN(date.getTime())
-    ? dateString
-    : date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
-};
-
-const getYear = (dateString: string) => {
-  const date = new Date(dateString);
-  return isNaN(date.getTime()) ? "" : date.getFullYear();
-};
-
-const EventCard: React.FC<EventCardProps> = (props) => {
-  const {
-    imageSrc,
-    date,
-    org,
-    orgLink,
-    title,
-    description,
-    link,
-    onReadMore,
-    onImageClick,
-    onRemove,
-    onEdit,
-  } = props;
-  const previewLength = 100;
-
-  return (
-    <div className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col relative transition-all duration-300 hover:shadow-2xl hover:shadow-red-900/10 hover:-translate-y-1">
-      {(onRemove || onEdit) && (
-        <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-          {onEdit && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit();
-              }}
-              className="bg-white/90 backdrop-blur text-gray-600 rounded-full p-2 hover:bg-amber-50 hover:text-amber-600 shadow-sm border border-gray-200 transition-colors"
-            >
-              <Icons.Edit />
-            </button>
-          )}
-          {onRemove && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemove();
-              }}
-              className="bg-white/90 backdrop-blur text-gray-600 rounded-full p-2 hover:bg-red-50 hover:text-red-600 shadow-sm border border-gray-200 transition-colors"
-            >
-              <Icons.Trash />
-            </button>
-          )}
-        </div>
-      )}
-
-      <div
-        className="relative aspect-video overflow-hidden bg-gray-100 cursor-pointer"
-        onClick={() => onImageClick?.(imageSrc)}
-      >
-        <img
-          src={imageSrc}
-          alt={title}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src =
-              "https://via.placeholder.com/400x200?text=Event";
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
-
-        <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden text-center min-w-[3.5rem]">
-          <div className="bg-red-700 text-white text-[10px] uppercase font-bold py-0.5 px-2 tracking-wide">
-            {getYear(date)}
-          </div>
-          <div className="px-2 py-1">
-            <div className="text-sm font-bold text-gray-900 leading-tight">
-              {formatDate(date).split(" ")[1]}
-            </div>
-            <div className="text-[10px] font-semibold text-gray-500 uppercase">
-              {formatDate(date).split(" ")[0]}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="p-5 flex-1 flex flex-col relative">
-        <div className="mb-3">
-          {orgLink ? (
-            <a
-              href={orgLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block text-[10px] font-bold text-white uppercase tracking-wider bg-gradient-to-r from-red-800 to-red-600 px-3 py-1 rounded-full shadow-sm hover:shadow-md transition-all"
-            >
-              {org}
-            </a>
-          ) : (
-            <span className="inline-block text-[10px] font-bold text-white uppercase tracking-wider bg-gradient-to-r from-red-800 to-red-600 px-3 py-1 rounded-full shadow-sm">
-              {org}
-            </span>
-          )}
-        </div>
-
-        <h3 className="text-lg font-extrabold text-gray-800 mb-2 leading-snug line-clamp-2 group-hover:text-red-700 transition-colors">
-          {link ? (
-            <a href={link} target="_blank" rel="noopener noreferrer">
-              {title}
-            </a>
-          ) : (
-            title
-          )}
-        </h3>
-
-        <p className="text-sm text-gray-600 flex-grow leading-relaxed mb-4 line-clamp-3">
-          {description.length > previewLength
-            ? `${description.substring(0, previewLength)}...`
-            : description}
-        </p>
-
-        <div className="flex items-center justify-between mt-auto pt-4 border-t border-dashed border-gray-200">
-          <button
-            onClick={() => onReadMore?.(props)}
-            className="text-xs font-bold text-gray-500 hover:text-red-700 flex items-center group/btn uppercase tracking-wide transition-colors"
-          >
-            Read More
-            <span className="ml-1 bg-gray-100 rounded-full p-1 group-hover/btn:bg-red-50 group-hover/btn:translate-x-1 transition-all">
-              <svg
-                className="w-3 h-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </span>
-          </button>
-
-          {link && (
-            <a
-              href={link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gray-400 hover:text-blue-600 transition-colors"
-              title="External Link"
-            >
-              <Icons.External />
-            </a>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
+import Icons from "@/components/events/icons";
+import EventCard, { EventCardProps } from "@/components/events/eventCards";
+import EventFormModal from "@/components/events/eventModal";
 
 export default function Events() {
   const [events, setEvents] = useState<EventCardProps[]>([]);
@@ -314,7 +29,9 @@ export default function Events() {
     date: "",
     link: "",
   };
-  const [formData, setFormData] = useState(emptyEventState);
+
+  const [formData, setFormData] =
+    useState<Omit<EventCardProps, "id">>(emptyEventState);
 
   const defaultEvents: EventCardProps[] = [
     {
@@ -354,9 +71,11 @@ export default function Events() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("events");
-      setEvents(saved ? JSON.parse(saved) : defaultEvents);
-    } catch (e) {
+      if (typeof window !== "undefined") {
+        const saved = localStorage.getItem("events");
+        setEvents(saved ? JSON.parse(saved) : defaultEvents);
+      }
+    } catch {
       setEvents(defaultEvents);
     }
   }, []);
@@ -413,137 +132,8 @@ export default function Events() {
       return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
     });
 
-  const EventFormModal = ({
-    isOpen,
-    onClose,
-    onSave,
-    title,
-    data,
-    setData,
-  }: any) => {
-    if (!isOpen) return null;
-    return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-          <div className="p-6 bg-gradient-to-r from-red-900 to-red-800 text-white flex justify-between items-center">
-            <h2 className="text-xl font-bold tracking-tight">{title}</h2>
-            <button
-              onClick={onClose}
-              className="hover:bg-white/20 p-1 rounded-full transition-colors"
-            >
-              &times;
-            </button>
-          </div>
-
-          <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                Title
-              </label>
-              <input
-                type="text"
-                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all"
-                value={data.title}
-                onChange={(e) => setData({ ...data, title: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                  Organization
-                </label>
-                <input
-                  type="text"
-                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
-                  value={data.org}
-                  onChange={(e) => setData({ ...data, org: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                  Date
-                </label>
-                <input
-                  type="date"
-                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
-                  value={data.date}
-                  onChange={(e) => setData({ ...data, date: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                Description
-              </label>
-              <textarea
-                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
-                rows={4}
-                value={data.description}
-                onChange={(e) =>
-                  setData({ ...data, description: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                Image URL
-              </label>
-              <input
-                type="text"
-                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
-                value={data.imageSrc}
-                onChange={(e) => setData({ ...data, imageSrc: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                  Org Link
-                </label>
-                <input
-                  type="text"
-                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
-                  value={data.orgLink}
-                  onChange={(e) =>
-                    setData({ ...data, orgLink: e.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                  Post Link
-                </label>
-                <input
-                  type="text"
-                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
-                  value={data.link}
-                  onChange={(e) => setData({ ...data, link: e.target.value })}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 border-t border-gray-100 flex justify-end gap-3 bg-gray-50">
-            <button
-              className="px-5 py-2 text-gray-600 font-medium hover:bg-gray-200 rounded-lg transition-colors"
-              onClick={onClose}
-            >
-              Cancel
-            </button>
-            <button
-              className="px-5 py-2 bg-gradient-to-r from-red-900 to-red-800 text-white font-medium rounded-lg hover:shadow-lg transform active:scale-95 transition-all"
-              onClick={onSave}
-            >
-              Save Changes
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <Menu activeLink="events" openModal={() => {}}>
+    <Menu activeLink="events">
       <div className="min-h-screen bg-slate-50 relative">
         <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-red-50 to-transparent pointer-events-none" />
 
@@ -634,8 +224,8 @@ export default function Events() {
                   No events found
                 </h3>
                 <p className="text-gray-500 mt-2 max-w-sm">
-                  We couldn't find any events matching your search. Try
-                  adjusting keywords.
+                  We couldnt find any events matching your search. Try adjusting
+                  keywords.
                 </p>
               </div>
             )}

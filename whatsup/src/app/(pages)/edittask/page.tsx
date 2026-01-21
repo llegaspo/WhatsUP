@@ -12,7 +12,11 @@ export default function AddTask() {
     priority: "medium",
   });
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
     const { name, value } = e.target;
     setNewTask((prev) => ({
       ...prev,
@@ -20,7 +24,7 @@ export default function AddTask() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log("New task submitted:", newTask);
     setNewTask({
@@ -32,7 +36,7 @@ export default function AddTask() {
   };
 
   return (
-    <Menu activeLink="calendar" openModal={() => {}}>
+    <Menu activeLink="calendar">
       <div className="flex flex-col md:flex-row items-start justify-center p-4 md:p-8 bg-gradient-to-br from-gray-100 to-gray-300 min-h-screen font-sans w-full shadow-xl">
         <div className="bg-white shadow-lg rounded-md w-full md:w-150 p-6 h-auto">
           <div className="flex justify-between items-center mb-6 bg-[#8b0031] rounded-lg px-4 py-3">
@@ -81,7 +85,7 @@ export default function AddTask() {
                 onChange={handleInputChange}
                 className="w-full p-2 border border-gray-300 rounded focus:ring-[#8b0031] focus:border-[#8b0031]"
                 placeholder="Enter task details"
-                rows="3"
+                rows={3}
               />
             </div>
 
@@ -136,4 +140,3 @@ export default function AddTask() {
     </Menu>
   );
 }
-
