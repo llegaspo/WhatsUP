@@ -130,7 +130,7 @@ enum PriorityType{
 model ToDo {
   id              String          @id @default(cuid())
   userID          String
-  fbID            String
+  fbID            String?
   title           String
   description     String?         @db.Text
   dueDate         DateTime        @map("due_Date")
@@ -138,7 +138,7 @@ model ToDo {
   priority        PriorityType
 
   user            User            @relation(fields:[userID], references:[id], onDelete: Cascade)
-  facebookPost    FacebookPost    @relation(fields:[fbID], references:[id], onDelete: Cascade)
+  facebookPost    FacebookPost?    @relation(fields:[fbID], references:[id], onDelete: Cascade)
 
   @@index([priority])
   @@map("To_Dos")

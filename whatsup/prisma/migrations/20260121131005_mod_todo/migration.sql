@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "To_Dos" ALTER COLUMN "fbID" DROP NOT NULL;
