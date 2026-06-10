@@ -58,5 +58,4 @@ By applying advanced learnings from industry internships, this project leverages
     ```
 
 ---
-*Developed by llegaspo*
 
